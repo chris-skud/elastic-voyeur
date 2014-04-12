@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html ng-app="voyeurApp">
+<head>
+  <title>Voyeur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <!-- link rel="stylesheet" href="css/bootstrap-theme.min.css" -->
+ <style>
+    .ace_editor { height: 600px; border:1px #eee solid; font-size: 11px}
+    .displayedJson {font-size:.8em; padding-right: 35px;}
+    .btn-success {background-color:#74b73f}
+    .navbar-default .navbar-brand {color: #ffffff;}
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <!-- div class="navbar-header" -->
+      <a class="navbar-brand" href="#">ElasticVoyeur - An ElasticSearch Web Frontend</a>
+    <!-- /div -->
+  </nav>
+  <div class="row" style="padding-top:50px">
+    
+  <!-- left column -->
+    <div class="col-md-4" ng-controller="QueryCtrl" style="border-right:1px solid #ccc;padding-left:45px; padding-right:30px; padding-top:15px; background-color:#f8f8f8">
+      
+        <!-- div class="btn-group" style="padding-left:35px; padding-right:15px">
+            <button ng-click="saveQuery(queryName)" class="btn btn-default" type="button">
+              <span class="glyphicon glyphicon-floppy-save"></span>
+            </button>
+          <input type="text" class="form-control" style="width:auto" placeholder="name your query!" ng-model="queryName" value="">
+        </div -->
+      
+      <div class="row" style="width:100%">
+        <form role="form">
+          <div class="form-group">
+            <label for="elasticsearchUrl">ElasticSearch Instance</label>
+            <input type="text" class="form-control input-sm" style="width:100%" placeholder="http://" ng-model="queryObj.uri" value="">
+          </div>
+          <div class="form-group" style="float:left">
+            <label for="resultSize">Count (limit)</label>
+            <input type="text" style="width:auto" ng-model="queryObj.get().size" class="form-control input-sm" id="resultSize" placeholder="100">
+          </div>
+          <div class="btn-group" style="float:right;margin-top:24px">
+            <button ng-click="runQuery()" class="btn btn-success btn-sm">Run 
+              <span class="glyphicon glyphicon-play"></span>
+              <img src="img/spinner3-black.gif" height="18" width="18" class="ng-hide" ng-show="loading">
+            </button>
+          </div>
+        </form>    
+      </div>
+      
+      <div class="row">
+        <div style="font-size:11px" ui-ace="{
+            theme:'tomorrow',
+            mode: 'json',
+            onLoad: aceLoaded,
+            onChange: aceChanged
+          }" ng-model="queryObj.queryJson">
+        </div>
+      </div>
+
+    </div> <!-- left column -->
+
+    <!-- results column -->
+    <div class="col-md-8" ng-controller="ResultsCtrl" style="padding-top:15px; padding-right:45px;margin-right:0px" ng-cloak>
+      
+      
+      <div style="padding-right:5px">
+      <h5>Results (<span id="count">{{(queryResults.length()|filter:filterList)}}</span>)</h5>
+      </div>
+      <!--
+      <div class="btn-group">
+        <input id="filterList" ng-model="filterList" type="text" class="form-control" placeholder="filter">
+      </div>
+      -->
+
+      <div class="btn-group" style="padding-right:15px">
+        <button type="button" ng-class="{'btn btn-primary btn-sm':showRaw, 'btn btn-default btn-sm':!showRaw}" raw-results>Raw</button>
+        <div class="btn-group">
+          <button type="button" ng-class="{'btn btn-default btn-sm':showRaw, 'btn btn-primary btn-sm':!showRaw}" table-results>Table</button>
+        </div>
+      </div>
+
+      <div class="btn-group" style="padding-right:15px">
+       <button class="btn btn-default btn-sm" 
+          export-csv 
+          filename="download.csv">Export (csv)
+        </button>
+      </div>
+      <div style="float:right" ng-show="showPaginator()">
+        <ul class="pagination pagination-sm" style="margin:0px;margin-top:3px">
+          <li ng-repeat="i in getNumberAsArray(numberOfPages()) track by $index" ng-class="{active: currentPage == $index}">
+          <a href="#" ng-click="setCurrentPage($index)">{{$index + 1}}</a>
+          </li>  
+        </ul>
+      </div>
+      <div class="table-responsive" style="padding-top:5px">
+        <div ng-show="showRaw">
+          <pre class="displayedJson">{{queryResults.getRecords()|json}}</pre>
+        </div>
+        <table ng-hide="showRaw" class="table table-condensed table-bordered">
+          <thead>
+            <tr>
+              <th>&nbsp;</th>
+              <th ng-repeat="column in selectedColumns.getAll()">{{column}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr bindonce ng-repeat="result in queryResults.getRecords() | startFrom: currentPage * pageSize  | limitTo: pageSize">
+              <td bo-text="queryResults.getRecords().indexOf(result)+1" style="background-color:#f8f8f8;"></td>
+              <td ng-repeat="column in selectedColumns.getAll()">
+                <span bo-text="getItemValue(column, result)"></span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div> <!-- end right column -->
+  </div> <!-- end top row -->
+
+  <script src="js/lib/angular.min.js"></script>
+  <script src="js/lib/angular.ui.bootstrap.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/controllers.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/filters.js"></script>
+  <script src="js/directives.js"></script>
+  <!-- script src="js/lib/moment.js"></script -->
+  <!-- script src="js/lib/moment-timezone.js"></script -->
+  <!-- script src="js/lib/moment-timezone-data.js"></script -->
+  <script src="js/lib/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript" src="js/lib/ace/ui-ace.js"></script>
+  <script type="text/javascript" src="js/lib/angular-csv.js"></script>
+  <script type="text/javascript" src="js/lib/bindonce.js"></script>
+  <script type="text/javascript" src="js/lib/localstorage.js"></script>
+  <!-- script>
+    moment().tz("America/Denver").format();
+  </script -->
+</body>
+</html>
