@@ -13,7 +13,7 @@ angular.module('voyeureApp.controllers', []).
     $scope.queryResults = QueryResults;
     $scope.selectedColumns = SelectedColumns;
     $scope.noResults = true;
-    $scope.uris = ['http://seer-es-report.prsn.us/seer/activity/search-raw.json']; // probably could keep track
+    $scope.uris = ['http://localhost:9200/_search']; // probably could keep track
                 //'http://seer-es-report.pqa.prsn.us/seer/activity/search-raw.json'];
 
     $scope.queryObj.uri = $scope.uris[0]; // initialize to first item in uris list.
@@ -53,18 +53,22 @@ angular.module('voyeureApp.controllers', []).
 
       ElasticSearchQuerySvc.async($scope.queryObj).then(function (data) {
         $scope.loading = false; // stop the spinner
-        $scope.queryResults.setRecords(data.hits);
 
-        $scope.setResultKeys($scope.queryResults.getRecordByIndex(0)); // populate model for "Add Column" dropdown
+        // locked in to default ES results structure with this.
+        // need to perhaps dynamically find array... could be dicey
+        $scope.queryResults.setRecords(data.hits.hits);
+
+        $scope.setResultKeys($scope.queryResults.getRecordByIndex(0));
         $scope.noResults = false;
       });
     };
 
     $scope.setResultKeys = function(resultObj) {
       $scope.resultKeys = PropertyPathResolver.resultsKeys(resultObj);
+
       // for now, add all keys as table columns (later want to allow select/deslect of columns)
       for (var i = 0;i < $scope.resultKeys.length; i++) {
-        $scope.selectedColumns.pushItem($scope.resultKeys[i]);  
+        $scope.selectedColumns.pushItem($scope.resultKeys[i]);
       }
     }
   })

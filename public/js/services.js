@@ -52,16 +52,13 @@ angular.module('voyeurApp.services', [])
 
 
   .factory('QueryObj', function() {
+    // uri needs to get pulled out of here.
     var _queryObj = {
-      uri: 'http://seer-es-report.prsn.us/seer/activity/search-raw.json--test',
+      uri: '',
       size : 1000,
       query: {
-        bool: {
-          must: [
-            { term: { "generator.appId" : "oc_social" } },
-            { term: { "verb" : "messaged" } }, 
-            { "range" : { "published" : { "from": "now-1d", "to" : "now"} } }
-          ]
+        query: {
+          match_all: {}
         }
       }
     };
@@ -105,26 +102,37 @@ angular.module('voyeurApp.services', [])
 
   .factory('PropertyPathResolver', function() {
     var keyPaths = [];
+    
     var PropertyPathResolver = {
-
+      
       resultsKeys: function(obj) {
         return this.iterate(obj, '');
       },
 
       iterate: function (obj, stack) {
-        var counter = 0;
         for (var property in obj) {
-          if (obj.hasOwnProperty(property)) {
-            if (typeof obj[property] == "object") {
-              if (stack === '') {
+          if (obj.hasOwnProperty(property)) { // check we're dealing with an object
+
+            if (typeof obj[property] == "object") { // we have children to process so recurse  
+              if (stack === '') { // item at first level, but has children.
                 this.iterate(obj[property], property);
               }
               else {
                 this.iterate(obj[property], stack + '.' + property);
               }
-            } 
-            else {
-              keyPaths.push(stack + '.' + property);
+            }
+            else { // no children left, time to push it on the columns array
+              if (stack === '') { // first level property so no hierarch to prepend.
+                keyPaths.push(property);
+              }
+              else { // we're at least one level deep in the object hierarchy so prepend path (stack).
+                if (isNaN(parseInt(property.charAt(0), 10))) { // first char in property is not a number
+                  keyPaths.push(stack + '.' + property);
+                }
+                else { // property begins with int, which means it must (by js naming rules + our logic) be an array index
+                  keyPaths.push(stack + '[' + property + ']');
+                }
+              }
             }
           }
         }
@@ -221,10 +229,11 @@ angular.module('voyeurApp.services', [])
     var ElasticSearchQuerySvc = {
       async: function(queryObj) {
         // $http returns a promise, which has a then function, which also returns a promise
+        var uri = queryObj.uri;
         var payload = queryObj.get();
         //console.log(queryObj.uri);
-        payload.uri = queryObj.uri;
-        var promise = $http.post('/query', payload).then(function(response) {
+        
+        var promise = $http.post(uri, payload.query).then(function(response) {
           // The return value gets picked up by the then in the controller.
           //scope.queryResult = response.data;
           return response.data;

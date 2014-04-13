@@ -7,14 +7,17 @@ var config = require('./config.js');
 app.use(bodyParser());
 app.use(express.static(__dirname + '/public'));
 
-app.route('/query')
+
+/*
+* Would love to get away from any server-side proxy
+* for this app but might be needed to ease cross-orgin and/or
+* auth cases. Not currently using it for localhost ES testing.
+*/
+
+
+app.route('/_search')
 
   .post(function(req, res, next) {
-    /*
-    * Make request to ElasticSearch server. The only reason for
-    * this node proxy is to handle auth (just basic for now)
-    */
-
     var creds = {};
     creds[config.userName] = config.password;
     
