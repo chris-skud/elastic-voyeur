@@ -3,25 +3,24 @@
 /* Controllers */
 angular.module('voyeureApp.controllers', []).
   
-  controller('QueryCtrl', function QueryCtrl($scope, QueryResults, QueryObj, SavedQueries, ElasticSearchQuerySvc, PropertyPathResolver, SelectedColumns) {
-    $scope.queryObj = QueryObj;
-    //$scope.queryObjString = QueryObjString;
+  controller('QueryCtrl', function QueryCtrl($scope, Query, QueryRequest, QueryResults, PropertyPathResolver, ResultColumns) {
+    $scope.queryObj = Query;
     $scope.loading = false;
     
-    $scope.queryName = "";
-    $scope.resultKeys = [];
+    $scope.resultKeys = []; // can probably remove this and just set ResultColumns
     $scope.queryResults = QueryResults;
-    $scope.selectedColumns = SelectedColumns;
+    $scope.resultColumns = ResultColumns;
     $scope.noResults = true;
-    $scope.uris = ['http://localhost:9200/_search']; // probably could keep track
-                //'http://seer-es-report.pqa.prsn.us/seer/activity/search-raw.json'];
+    
+    //$scope.esUri = 'http://es.production.com/_search'; // if your server supports jsonp and doesn't require auth.
+    //$scope.esUri = 'http://localhost:9200/_search'; // you've got a local es instance running.
+    //$scope.esUri = 'http://localhost:3000/proxy'; // you need to proxy for cross-origin and/or auth reasons.
+    $scope.esUri = 'http://localhost:3000/dummydata'; // dummy data for testing.
 
-    $scope.queryObj.uri = $scope.uris[0]; // initialize to first item in uris list.
 
     $scope.aceLoaded = function(_editor) {
       _editor.on("blur", function() {
         try {
-          //$scope.queryObj.set(JSON.parse(_editor.getValue()));
           $scope.queryObj.set(_editor.getValue());
 
         } 
@@ -31,27 +30,15 @@ angular.module('voyeureApp.controllers', []).
         }
       });
     };
-    //$scope.aceChanged = function(e) {console.log('changed')};
-
-    $scope.saveQuery = function (qName) {
-      SavedQueries.add(qName, $scope.queryObj);
-      //console.log(SavedQueries.get(qName));
-      console.log(SavedQueries.getAll());
-    };
-
-    $scope.getSavedQueries = function () {
-      //SavedQueries.getSaved
-    };
 
     $scope.runQuery = function () {
-
       $scope.loading = true; // start the spinner
 
       // clear all column related arrays before we go into async operations.
-      $scope.selectedColumns.clear();
+      $scope.resultColumns.clear();
       $scope.resultKeys.length = 0;
 
-      ElasticSearchQuerySvc.async($scope.queryObj).then(function (data) {
+      QueryRequest.async($scope.queryObj, $scope.esUri).then(function (data) {
         $scope.loading = false; // stop the spinner
 
         // locked in to default ES results structure with this.
@@ -67,17 +54,18 @@ angular.module('voyeureApp.controllers', []).
       $scope.resultKeys = PropertyPathResolver.resultsKeys(resultObj);
 
       // for now, add all keys as table columns (later want to allow select/deslect of columns)
+      //remove this loop.
       for (var i = 0;i < $scope.resultKeys.length; i++) {
-        $scope.selectedColumns.pushItem($scope.resultKeys[i]);
+        $scope.resultColumns.pushItem($scope.resultKeys[i]);
       }
     }
   })
 
   /* Ctrler for right column, results container*/
-  .controller('ResultsCtrl', function ResultsCtrl($scope, QueryResults, SelectedColumns) {
+  .controller('ResultsCtrl', function ResultsCtrl($scope, QueryResults, ResultColumns) {
     $scope.showRaw = false;
     $scope.queryResults = QueryResults;
-    $scope.selectedColumns = SelectedColumns;
+    $scope.resultColumns = ResultColumns;
 
     // pagination vars
     $scope.currentPage = 0; 
@@ -85,20 +73,7 @@ angular.module('voyeureApp.controllers', []).
 
     $scope.getItemValue = function (path, obj) {
       // this evals to produce the value of a n-nested deep javascript object
-      return eval("obj." + path); // less code but DEAD SLOW
-    };
-
-    //$scope.exportResults = function() {}
-    $scope.addColumn = function (columnKey) {
-      /*
-       $scope.selectedColumns.push(columnKey);
-
-       var index = $scope.resultKeys.indexOf(columnKey);
-       $scope.resultKeys.splice(index, 1); // will need to deal with this when remove column implemented.
-       */
-    };
-
-    $scope.removeColumn = function (columnKey) {
+      return eval("obj." + path);
     };
 
     // pagination funcs
@@ -113,7 +88,6 @@ angular.module('voyeureApp.controllers', []).
       else {
         return [];
       }
-      
     };
 
     $scope.numberOfPages = function() {

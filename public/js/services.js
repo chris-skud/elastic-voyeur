@@ -4,70 +4,41 @@
 angular.module('voyeurApp.services', [])
 
   /*
-    Selected Columns defaults to all keys in a result record.
+    ResultColumns defaults to all keys in a result record.
     Can be used later to add/remove columns from the tabular format. 
   */
-  .factory('SelectedColumns', function() {
-    var selectedColumns = [];
-    var SelectedColumns = {
+  .factory('ResultColumns', function() {
+    var resultColumns = [];
+    var ResultColumns = {
       getAll: function() {
-        return selectedColumns;
+        return resultColumns;
       },
       getItemByIndex: function(index) {
-        return selectedColumns[index];
+        return resultColumns[index];
       },
       clear: function() {
-        selectedColumns.length = 0;
+        resultColumns.length = 0;
       },
       pushItem: function(obj) {
-        selectedColumns.push(obj);
+        resultColumns.push(obj);
       }
     };
-    return SelectedColumns;
+    return ResultColumns;
   })
 
 
-
-  /* inject both localstorage and server-side (levelDB or EnDB?) */
-  .factory('SavedQueries', function (localStorageService) {
-    var localStorageKey = 'SavedQueries';
-    var SavedQueries = {
-
-      // not currently implemented in the localStorage API
-      getAll:function () {
-        return localStorageService.get(localStorageKey);
-      },
-
-      get:function (name) {
-        return localStorageService.get(localStorageKey + '.' + name);
-      },
-
-      add:function (name, queryObj) {
-        var fullName = localStorageKey + '.' + name;
-        return localStorageService.add(fullName, angular.toJson(queryObj));
-      }
-    };
-    return SavedQueries;
-  })
-
-
-  .factory('QueryObj', function() {
+  .factory('Query', function() {
     // uri needs to get pulled out of here.
     var _queryObj = {
-      uri: '',
-      size : 1000,
       query: {
+        size: 150,
         query: {
           match_all: {}
         }
       }
     };
     
-    var QueryObj = {
-      
-      //uri: _queryObj.uri,
-      //size: _queryObj.size,
-      //query: _queryObj.query,
+    var Query = {
       get: function() {
         return _queryObj;
       },
@@ -80,8 +51,6 @@ angular.module('voyeurApp.services', [])
           _queryObj.query = newQueryobj;
         }
       },
-
-      uri:  _queryObj.uri,
 
       stringify: function() {  
         return JSON.stringify(_queryObj, null, 2);
@@ -97,7 +66,7 @@ angular.module('voyeurApp.services', [])
         return JSON.parse(queryJson);
       }      
     };
-    return QueryObj;
+    return Query;
   })
 
   .factory('PropertyPathResolver', function() {
@@ -166,7 +135,7 @@ angular.module('voyeurApp.services', [])
 
   /* this is used for csv export only at this point but could be useful
      to use this same service for the actual table render  */
-  .factory('ResultsTable', function(QueryResults, SelectedColumns) {
+  .factory('ResultsTable', function(QueryResults, ResultColumns) {
     function _getItemValue(path, obj) {
       // this evals to produce the value of a n-nested deep javascript object
       return eval("obj." + path); // not sure about perf on this
@@ -176,19 +145,19 @@ angular.module('voyeurApp.services', [])
       var resultsArray = [];
       // build header row
       var headerRow = {};
-      for (var j = 0; j < SelectedColumns.getAll().length; j++) {
+      for (var j = 0; j < ResultColumns.getAll().length; j++) {
         var tmpKey = j.toString();
-        headerRow[tmpKey] = SelectedColumns.getItemByIndex(j);
+        headerRow[tmpKey] = ResultColumns.getItemByIndex(j);
       }
       resultsArray[0] = headerRow;
 
       // build rows and columns.  note the i = 1 to exclude header row
       for (var i = 1; i < QueryResults.getRecords().length + 1; i++) { // loop through record rows
         var rowObj = {};
-        for (var j = 0; j < SelectedColumns.getAll().length; j++) { // loop columns
-          var val = _getItemValue(SelectedColumns.getItemByIndex(j), QueryResults.getRecords()[i-1]);
+        for (var j = 0; j < ResultColumns.getAll().length; j++) { // loop columns
+          var val = _getItemValue(ResultColumns.getItemByIndex(j), QueryResults.getRecords()[i-1]);
           // build the row object (each cell is a key:value pair)
-          rowObj[SelectedColumns.getItemByIndex(j)] = val;
+          rowObj[ResultColumns.getItemByIndex(j)] = val;
         }
         resultsArray[i] = rowObj; // set the row object in the array
       }
@@ -225,22 +194,19 @@ angular.module('voyeurApp.services', [])
   })
 
 
-  .factory('ElasticSearchQuerySvc', function($http) {
-    var ElasticSearchQuerySvc = {
-      async: function(queryObj) {
+  .factory('QueryRequest', function($http) {
+    var QueryRequest = {
+      async: function(queryObj, esUri) {
         // $http returns a promise, which has a then function, which also returns a promise
-        var uri = queryObj.uri;
         var payload = queryObj.get();
-        //console.log(queryObj.uri);
         
-        var promise = $http.post(uri, payload.query).then(function(response) {
+        var promise = $http.post(esUri, payload.query).then(function(response) {
           // The return value gets picked up by the then in the controller.
-          //scope.queryResult = response.data;
           return response.data;
         });
         // Return the promise to the controller
         return promise;
       }
     };
-    return ElasticSearchQuerySvc;
+    return QueryRequest;
   });
