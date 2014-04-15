@@ -1,24 +1,25 @@
 #ElasticVoyeur
-##A simple web frontend for ElasticSearch that will transform the JSON results into tabular format to enable CSV output. 
+A simple web frontend for ElasticSearch that will transform the JSON results into tabular format to enable CSV output. 
 
 ##Setup:
 
-Clone the elastic-voyeur repo.
+Get a local copy of the elastic-voyeur repo (fork/clone, clone or just download).
 
-then
+From the root project directory, run:
 ```
 npm install
 ```
+then
 ```
 node server.js
 ```
 
 ##Currently supported Modes:
-No Server - If you are running a localhost or jsonp enabled ES server, you should be able to just load /public/index.html into a browser, change the "ElasticSearch Instance" url to your server (e.g. 'http://localhost:9200/_search') and voila.
+**No Server** - If you are running a localhost or jsonp enabled ES server, you should be able to just load /public/index.html into a browser, change the "ElasticSearch Instance" url to your server (e.g. 'http://localhost:9200/_search') and voila.
 
-There is a /dummydata route in the server.js file (e.g. 'http://localhost:3000/dummydata') and you can set the "ElasticSearch Instance" url  to it and quickly test out the UI.
+**Node server with dummy data** - There is a /dummydata route in the server.js file (e.g. 'http://localhost:3000/dummydata') and you can set the "ElasticSearch Instance" url  to it and quickly test out the UI.
 
-Node.js app as proxy to ES server - If your ES instance doesn't have jsonp enabled or requires some sort of auth, you can use the Node.js /proxy route as a starting point.
+**Node server as proxy to ElasticSearch server instance** - If your ES instance doesn't have jsonp enabled or requires some sort of auth, you can use the Node.js /proxy route as a starting point.
 
 
 ##Extra Credit:
