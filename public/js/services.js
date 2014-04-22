@@ -75,7 +75,13 @@ angular.module('voyeurApp.services', [])
     var PropertyPathResolver = {
       
       resultsKeys: function(obj) {
-        return this.iterate(obj, '');
+        if (typeof obj !== 'object') {
+          keyPaths.push(0); // safest bet that the value of this key could be accessed later at the 0 index.
+          return keyPaths;
+        }
+        else {
+          return this.iterate(obj, '');
+        }
       },
 
       iterate: function (obj, stack) {
@@ -95,7 +101,7 @@ angular.module('voyeurApp.services', [])
                 keyPaths.push(property);
               }
               else { // we're at least one level deep in the object hierarchy so prepend path (stack).
-                if (isNaN(parseInt(property.charAt(0), 10))) { // first char in property is not a number
+                if (isNaN(parseInt(property.charAt(0), 10))) { // if first char in property is not a number
                   keyPaths.push(stack + '.' + property);
                 }
                 else { // property begins with int, which means it must (by js naming rules + our logic) be an array index
