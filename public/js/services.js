@@ -2,7 +2,6 @@
 
 /* Services */
 angular.module('voyeurApp.services', [])
-
   /*
     ResultColumns defaults to all keys in a result record.
     Can be used later to add/remove columns from the tabular format. 
@@ -28,7 +27,6 @@ angular.module('voyeurApp.services', [])
 
 
   .factory('Query', function() {
-    // uri needs to get pulled out of here.
     var _queryObj = {
       query: {
         size: 150,
@@ -194,7 +192,6 @@ angular.module('voyeurApp.services', [])
 
         return encodeURI(csvContent);
       }
-
     };
     return ResultsTable;
   })

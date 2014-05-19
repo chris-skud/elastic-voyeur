@@ -18,12 +18,11 @@ module.exports = function(config) {
         'public/js/lib/angular.min.js',
         'public/js/app.js',
         'public/js/filters.js',
+        'public/js/controllers.js',
         'public/js/lib/angular-mocks.js',
         'public/js/**/*.js',
         'test/*.js'
     ],
-
-
 
 
     // list of files to exclude

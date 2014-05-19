@@ -1,7 +1,6 @@
 describe('services tests', function() {
   beforeEach(module('voyeurApp'));
   
-  /* PropertyPathResolver creates an array of from a json oblect's property keys */
   it('should parse the keys of a complex js object into an array of fully qualified strings',
     inject(function(PropertyPathResolver) {
       var propertyArr = PropertyPathResolver.resultsKeys(
@@ -27,6 +26,4 @@ describe('services tests', function() {
       expect(propertyArr).toEqual(['0','1','2']);
     })
   );
-
-
 });
